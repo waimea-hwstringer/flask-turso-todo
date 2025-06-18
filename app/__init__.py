@@ -53,25 +53,26 @@ def todo():
     with connect_db() as client:
         # Get all the things from the DB
         sql = """
-            SELECT tasks.id,
-                   tasks.name,
-                   tasks.timestamp,
-                   tasks.priority,
-                   tasks.completed,
-                   
-                   users.id,
-                   users.name AS owner
+            SELECT id,
+                   name,
+                   timestamp,
+                   priority,
+                   completed
 
             FROM tasks
-            JOIN users ON tasks.user_id = users.id
-
             
+            WHERE user_id=?
         """
-        result = client.execute(sql)
+        user_id = session["user_id"]
+        params=[user_id]
+        result = client.execute(sql, params)
+        
         tasks = result.rows
+        completed_tasks = [task for task in tasks if task['completed']]
+        uncompleted_tasks = [task for task in tasks if not task['completed']]
 
         # And show them on the page
-        return render_template("pages/todo.jinja", tasks=tasks)
+        return render_template("pages/todo.jinja", tasks=tasks, ctasks=completed_tasks, utasks=uncompleted_tasks)
 
 
 #-----------------------------------------------------------
@@ -137,6 +138,39 @@ def add_a_task():
         flash(f"Task '{name}' added", "success")
         return redirect("/todo")
 
+#-----------------------------------------------------------
+# Route for completing a task, Id given in the route
+#-----------------------------------------------------------
+@app.get("/complete/<int:id>")
+@login_required
+def complete_a_thing(id):
+    
+    with connect_db() as client:
+        # Update the completion 
+        sql = "UPDATE tasks SET completed=1 WHERE id=?"
+        values = [id]
+        client.execute(sql, values)
+
+        # Go back to the home page
+        return redirect("/todo")
+
+#-----------------------------------------------------------
+# Route for completing a task, Id given in the route
+#-----------------------------------------------------------
+@app.get("/uncomplete/<int:id>")
+@login_required
+def uncomplete_a_thing(id):
+    # Get the user id from the session
+
+    with connect_db() as client:
+        # Update the completion 
+        sql = "UPDATE tasks SET completed=0 WHERE id=?"
+        values = [id]
+        client.execute(sql, values)
+
+        # Go back to the home page
+        return redirect("/todo")
+
 
 #-----------------------------------------------------------
 # Route for deleting a thing, Id given in the route
@@ -145,18 +179,16 @@ def add_a_task():
 @app.get("/delete/<int:id>")
 @login_required
 def delete_a_thing(id):
-    # Get the user id from the session
-    user_id = session["user_id"]
 
     with connect_db() as client:
         # Delete the thing from the DB only if we own it
-        sql = "DELETE FROM things WHERE id=? AND user_id=?"
-        values = [id, user_id]
+        sql = "DELETE FROM tasks WHERE id=?"
+        values = [id]
         client.execute(sql, values)
 
         # Go back to the home page
         flash("Thing deleted", "success")
-        return redirect("/things")
+        return redirect("/todo")
 
 
 #-----------------------------------------------------------

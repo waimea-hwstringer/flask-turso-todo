@@ -17,15 +17,15 @@
 {% block content %}
 
     <article>
-
         <h3>Uncompleted Tasks</h3>
-
         <ul>
-            {% for task in tasks %}
+            {% for task in utasks %}
 
                 <li>
-                    <p>{{task.name}}</p>
-                    <p>{{task.priority}}</p>
+                    <span><a href="/complete/{{task.id}}">☐</a></span>
+                    <span>{{task.name}}</span>
+                    <span>{{task.priority}}</span>
+                    <span>ID: {{task.id}}</span>
                 </li>
 
             {% else %}
@@ -35,6 +35,27 @@
             {% endfor %}
         </ul>
 
+    </article>
+
+    <article>
+        <h3>Completed Tasks</h3>
+        <ul>
+            {% for task in ctasks %}
+
+                <li>
+                    <span><a href="/uncomplete/{{task.id}}">🗹</a></span>
+                    <span>{{task.name}}</span>
+                    <span>{{task.priority}}</span>
+                    <span><a href="/delete/{{task.id}}">🗑</a></span>
+                    <span>ID: {{task.id}}</span>
+                </li>
+
+            {% else %}
+
+                <p>None!</p>
+
+            {% endfor %}
+        </ul>
     </article>
     
 
